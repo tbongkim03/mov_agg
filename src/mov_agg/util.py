@@ -1,6 +1,7 @@
 import pandas as pd
+from tabulate import tabulate
 
-def merge(load_dt=20240731):
+def merge(load_dt='20240725'):
     read_df = pd.read_parquet('~/tmp/test_parquet')
     cols = ['movieCd', #영화의 대표코드를 출력합니다.
        'movieNm', #영화명(국문)을 출력합니다.
@@ -11,28 +12,32 @@ def merge(load_dt=20240731):
         'repNationCd', #한국외국영화 유무
        ]
 
-    df = read_df[cols]
-    temp_df = read_df[cols]
+    df = read_df[cols].copy()
     
-    temp_df['load_dt'] = temp_df['load_dt'].astype("object")
-    temp_df['load_dt'] = temp_df['load_dt'].fillna(0)
-    temp_df['load_dt'].astype(str).astype(int)
+    df['load_dt'] = df['load_dt'].astype("object")
+    #df_where = df[(df['movieCd'] == '20235974') & (df['load_dt'] == int(load_dt))].copy()
+    df_where = df[(df['movieCd'] == '20235974') & (df['load_dt'] == int(load_dt))].copy() #날짜조건 load_dt 인자 받기 print(dw)
+    df_where['multiMovieYn'] = df_where['multiMovieYn'].astype("object")
+    df_where['multiMovieYn'] = df_where['multiMovieYn'].fillna('unknown')
 
-    df_where = temp_df[temp_df['load_dt'] == load_dt]
-    #print(df_where)
-    #df_where['multiMovieYn'] = df_where['multiMovieYn'].astype("object")
-    #df_where['multiMovieYn'] = df_where['multiMovieYn'].fillna(0)
-    #df_where['multiMovieYn'].astype(str).astype(int)
-
-    #df_where['repNationCd'] = df_where['repNationCd'].astype("object").astype(str).astype(int)
-    #df_where['repNationCd'] = df_where['repNationCd'].fillna(0)
-    #df_where['repNationCd'].astype(str).astype(int)
+    df_where['repNationCd'] = df_where['repNationCd'].astype("object")
+    df_where['repNationCd'] = df_where['repNationCd'].fillna('unknown')
     
-    #print(df)
-    #df_where = df[df['movieCd'] == '20112207']
-    #df_mul_Y = df[df['multiMovieYn'] == 'Y']
-    #df_mul_N = df[df['multiMovieYn'] == 'N']
-
+    u_multi = df_where[df_where['multiMovieYn'] == 'unknown']
+    u_nation = df_where[df_where['repNationCd'] == 'unknown']
+  
+    unknownindex = 0
+    for i in u_multi['multiMovieYn'].index:
+            for j in u_nation['repNationCd'].index:
+                if i == j:
+                    unknownindex=j
+                    print(i,j)
+                    u_multi = u_multi.drop(index=unknownindex)
+                    u_nation = u_nation.drop(index=unknownindex)
+    merge_df = pd.merge(u_multi, u_nation, on='movieCd', suffixes=('_m', '_n'))
+    headers = ['movieCd', 'movieNm_m', 'openDt_m', 'audiCnt_m', 'load_dt_m', 'multiMovieYn_m', 'repNationCd_m']
+    df_cleaned = merge_df[headers] 
+    #print(m_df)
     #merge_df = pd.merge(df['multiMovieYn'], df['repNationCd'], on="movieCd")
     #print(df_n_YF)
     #print("\n"*3)
@@ -41,6 +46,12 @@ def merge(load_dt=20240731):
     #print(df_n_NF)
     #print("\n"*3)
     #print(df_n_NK)
-    #print(df_where)
+    #print(u_multi)
+    #print(u_nation)
+    #print(merge_df)
+    tabulate.WIDE_CHARS_MODE = False
+    print(tabulate(df_cleaned, headers, tablefmt="rst"))   
     #print(df_where.dtypes)
-    return df_where
+    return df_cleaned
+
+merge()
