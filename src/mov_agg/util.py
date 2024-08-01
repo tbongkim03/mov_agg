@@ -44,5 +44,3 @@ def merge(load_dt=20240731):
     #print(df_where)
     #print(df_where.dtypes)
     return df_where
-
-merge()
